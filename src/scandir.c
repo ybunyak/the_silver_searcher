@@ -7,8 +7,7 @@
 int ag_scandir(const char *dirname,
                struct dirent ***namelist,
                filter_fp filter,
-               void *baton
-              ) {
+               void *baton) {
     DIR *dirp = NULL;
     struct dirent **names = NULL;
     struct dirent *entry, *d;
@@ -20,7 +19,7 @@ int ag_scandir(const char *dirname,
         goto fail;
     }
 
-    names = (struct dirent**)malloc(sizeof(struct dirent*) * names_len);
+    names = (struct dirent**)malloc(sizeof(struct dirent *) * names_len);
     if (names == NULL) {
         goto fail;
     }
@@ -32,7 +31,7 @@ int ag_scandir(const char *dirname,
         if (results_len >= names_len) {
             struct dirent **tmp_names = names;
             names_len *= 2;
-            names = (struct dirent**)realloc(names, sizeof(struct dirent*) * names_len);
+            names = (struct dirent**)realloc(names, sizeof(struct dirent *) * names_len);
             if (names == NULL) {
                 free(tmp_names);
                 goto fail;
@@ -47,7 +46,7 @@ int ag_scandir(const char *dirname,
         memcpy(s, entry->d_name, s_len);
 #else
 
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
         d = malloc(sizeof(struct dirent));
 #else
         d = malloc(entry->d_reclen);
@@ -56,7 +55,7 @@ int ag_scandir(const char *dirname,
         if (d == NULL) {
             goto fail;
         }
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
         memcpy(d, entry, sizeof(struct dirent));
 #else
         memcpy(d, entry, entry->d_reclen);
@@ -72,13 +71,13 @@ int ag_scandir(const char *dirname,
     *namelist = names;
     return results_len;
 
-    fail:;
-    int i;
+fail:
     if (dirp) {
         closedir(dirp);
     }
 
     if (names != NULL) {
+        int i;
         for (i = 0; i < results_len; i++) {
             free(names[i]);
         }
