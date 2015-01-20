@@ -446,6 +446,10 @@ void search_dir(ignores *ig, const char *base_path, const char *path, const int 
                 if (opts.print_path == PATH_PRINT_DEFAULT || opts.print_path == PATH_PRINT_DEFAULT_EACH_LINE) {
                     opts.print_path = PATH_PRINT_NOTHING;
                 }
+                /* If we're only searching one file and --only-matching is specified, disable line numbers too. */
+                if (opts.only_matching && opts.print_path == PATH_PRINT_NOTHING) {
+                    opts.print_line_numbers = FALSE;
+                }
             }
             search_file(path);
         } else {
@@ -462,14 +466,10 @@ void search_dir(ignores *ig, const char *base_path, const char *path, const int 
         queue_item = NULL;
         dir = dir_list[i];
         ag_asprintf(&dir_full_path, "%s/%s", path, dir->d_name);
+#ifndef _WIN32
         if (opts.one_dev) {
-#ifdef _WIN32
-            struct _stat s;
-            if (_stat(dir_full_path, &s) != 0) {
-#else
             struct stat s;
             if (lstat(dir_full_path, &s) != 0) {
-#endif
                 log_err("Failed to get device information for %s. Skipping...", dir->d_name);
                 goto cleanup;
             }
@@ -478,6 +478,7 @@ void search_dir(ignores *ig, const char *base_path, const char *path, const int 
                 goto cleanup;
             }
         }
+#endif
 
         /* If a link points to a directory then we need to treat it as a directory. */
         if (!opts.follow_symlinks && is_symlink(path, dir)) {

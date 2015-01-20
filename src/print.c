@@ -181,8 +181,7 @@ void print_file_matches(const char *path, const char *buf, const size_t buf_len,
                 free(context_prev_lines[last_prev_line]);
             }
             /* We don't want to strcpy the \n */
-            context_prev_lines[last_prev_line] =
-                ag_strndup(&buf[prev_line_offset], i - prev_line_offset);
+            context_prev_lines[last_prev_line] = ag_strndup(&buf[prev_line_offset], i - prev_line_offset);
             last_prev_line = (last_prev_line + 1) % opts.before;
         }
 
@@ -210,6 +209,7 @@ void print_file_matches(const char *path, const char *buf, const size_t buf_len,
                     }
                 } else {
                     print_line_number(line, ':');
+                    int printed_match = FALSE;
                     if (opts.column) {
                         print_column_number(matches, last_printed_match, prev_line_offset, ':');
                     }
@@ -224,8 +224,21 @@ void print_file_matches(const char *path, const char *buf, const size_t buf_len,
                             }
                             printing_a_match = FALSE;
                             last_printed_match++;
+                            printed_match = TRUE;
+                            if (opts.only_matching) {
+                                fputc('\n', out_fd);
+                            }
                         }
                         if (last_printed_match < matches_len && j == matches[last_printed_match].start) {
+                            if (opts.only_matching && printed_match) {
+                                if (opts.print_path == PATH_PRINT_EACH_LINE) {
+                                    print_path(path, ':');
+                                }
+                                print_line_number(line, ':');
+                                if (opts.column) {
+                                    print_column_number(matches, last_printed_match, prev_line_offset, ':');
+                                }
+                            }
                             if (opts.color) {
                                 color_highlight_match(out_fd);
                             }
@@ -234,7 +247,7 @@ void print_file_matches(const char *path, const char *buf, const size_t buf_len,
                         /* Don't print the null terminator */
                         if (j < buf_len) {
                             /* if only_matching is set, print only matches and newlines */
-                            if (!opts.only_matching || printing_a_match || buf[j] == '\n') {
+                            if (!opts.only_matching || printing_a_match) {
                                 fputc(buf[j], out_fd);
                             }
                         }
